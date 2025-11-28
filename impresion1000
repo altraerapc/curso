@@ -1,0 +1,60 @@
+import os
+import time
+import win32print
+import win32api
+
+# Carpeta raíz con los PDF
+pdf_folder = r"C:/pdf/"
+log_file = r"C:/pdf/log.txt"  # archivo de registro
+
+# Obtener impresora predeterminada
+printer_name = win32print.GetDefaultPrinter()
+print(f"Impresora predeterminada: {printer_name}")
+
+# Abrir impresora y configurar tamaño A4 y monocromo
+hprinter = win32print.OpenPrinter(printer_name)
+properties = win32print.GetPrinter(hprinter, 2)
+devmode = properties["pDevMode"]
+
+# Constante para tamaño A4
+DM_PAPERSIZE_A4 = 9   # código estándar para A4
+devmode.PaperSize = DM_PAPERSIZE_A4
+
+# Configurar impresión en blanco y negro (monocromo)
+devmode.Color = 1  # 1 = monocromo, 2 = color (depende del driver)
+
+# Guardar cambios
+properties["pDevMode"] = devmode
+win32print.SetPrinter(hprinter, 2, properties, 0)
+win32print.ClosePrinter(hprinter)
+
+# Abrir archivo de log
+with open(log_file, "w", encoding="utf-8") as log:
+    log.write("Registro de impresión:\n")
+    log.write(f"Impresora: {printer_name}\n\n")
+
+    # Recorrer carpeta y subcarpetas
+    for root, dirs, files in os.walk(pdf_folder):
+        for file in sorted(files):  # orden alfabético
+            if file.lower().endswith(".pdf"):
+                file_path = os.path.join(root, file)
+                print(f"Imprimiendo en A4 y B/N: {file_path}")
+                
+                # Enviar archivo a la impresora
+                win32api.ShellExecute(
+                    0,
+                    "print",
+                    file_path,
+                    None,
+                    ".",
+                    0
+                )
+                
+                # Registrar en log
+                log.write(f"Impreso: {file_path}\n")
+                
+                # Pausa de 3 segundos
+                time.sleep(3)
+
+print("Todos los archivos PDF (incluyendo subcarpetas) han sido enviados en A4 y blanco y negro.")
+print(f"Se ha creado un registro en: {log_file}")
